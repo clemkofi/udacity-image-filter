@@ -2,6 +2,25 @@ import axios from "axios";
 import fs from "fs";
 import Jimp = require("jimp");
 
+// checkValidUrl
+// helper function to help to check if the url provided is in the right format
+// returns a boolean
+// INPUTS
+//      inputURL: string - a publicly accesible url
+// RETURNS
+//      a boolean of TRUE or FALSE which confirms if URL is valid
+export function checkValidUrl(inputURL: string): Boolean {
+  let url;
+
+  try {
+    url = new URL(inputURL);
+  } catch (_) {
+    return false;
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
 // filterImageFromURL
 // helper function to download, filter, and save the filtered image locally
 // returns the absolute path to the local image
