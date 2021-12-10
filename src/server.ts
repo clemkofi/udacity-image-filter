@@ -1,6 +1,10 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { filterImageFromURL, deleteLocalFiles } from "./util/util";
+import {
+  filterImageFromURL,
+  deleteLocalFiles,
+  checkValidUrl,
+} from "./util/util";
 
 (async () => {
   // Init the Express application
@@ -45,7 +49,49 @@ import { filterImageFromURL, deleteLocalFiles } from "./util/util";
 
   // Image filtering Endpoint
   // Creates a filter on top of the image and sends the processed image back
-  app.get("/filteredimage", async (req, res) => {});
+  app.get("/filteredimage", async (req, res) => {
+    let imageURL = req.query.image_url;
+
+    // check if the image_url is provided
+    if (!imageURL) {
+      return res.status(400).send({
+        message:
+          "Image url is required ... try GET /filteredimage?image_url={{}}",
+      });
+    }
+
+    // check if the image_url is a valid URL
+    let checkValidity: Boolean = checkValidUrl(imageURL);
+
+    if (!checkValidity) {
+      return res.status(400).send({ message: "Image url is invalid" });
+    }
+
+    // image path for deletion
+    let imagePath: string;
+
+    try {
+      // apply the filter to the image and save locally
+      imagePath = await filterImageFromURL(imageURL);
+
+      // send the response from the server
+      res.sendFile(imagePath, (error) => {
+        // handle any errors that occur while sending file
+        if (error) {
+          console.log(error);
+          res.status(404);
+        }
+
+        // clear the images from the server
+        deleteLocalFiles([imagePath]);
+      });
+    } catch (error) {
+      console.log(">", error);
+      return res
+        .status(422)
+        .send({ message: "Filter not applied .. an error occurred" });
+    }
+  });
 
   // Root Endpoint
   // Displays a simple message to the user
